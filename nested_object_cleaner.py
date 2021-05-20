@@ -18,7 +18,7 @@ def get_ordered_dict_from_file(fn: str) -> OrderedDict:
 def write_dict_to_json(dict_: dict, fn: str, sort_keys: bool = False) -> None:
     """Write `dict` as JSON to specified file."""
     with open(os.path.abspath(fn), "w") as write_file:
-        json.dump(dict_, write_file, sort_keys=sort_keys)
+        json.dump(dict_, write_file, sort_keys=sort_keys, indent=2)
 
 
 def get_values_for_keys(
