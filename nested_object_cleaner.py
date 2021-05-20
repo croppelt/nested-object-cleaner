@@ -51,6 +51,53 @@ def get_summed_frequencies(freq: Dict[Any, int]):
     return sum(freq.values())
 
 
+def _prune_dict(dict_, on_keys, for_values, ignore, path):
+    """Type-specific helper for `prune_obj`."""
+    pruned = {}
+    for k, v in dict_.items():
+        if k in on_keys and v in for_values:
+            # current `obj` matches pruning criteria: do *not* return it
+            return None
+        elif v:
+            # recursively prune current key's value
+            path.append(k)
+            pruned_v = prune_obj(
+                obj=v,
+                on_keys=on_keys,
+                for_values=for_values,
+                ignore=ignore,
+                path=path,
+            )
+            if pruned_v:
+                pruned[k] = pruned_v
+            path.pop()
+        else:
+            # catch and return empty value; it may be meaningful
+            pruned[k] = v
+    return pruned
+
+
+def _prune_list(list_, on_keys, for_values, ignore, path):
+    """Type-specific helper for `prune_obj`."""
+    pruned = []
+    for element in list_:
+        if element:
+            # recursively prune current element
+            pruned_e = prune_obj(
+                obj=element,
+                on_keys=on_keys,
+                for_values=for_values,
+                ignore=ignore,
+                path=path
+            )
+            if pruned_e:
+                pruned.append(pruned_e)
+        else:
+            # catch and return empty element; it may be meaningful
+            pruned.append(element)
+    return pruned
+
+
 def prune_obj(
     obj: Any,
     on_keys: Iterable[Any],
@@ -64,40 +111,21 @@ def prune_obj(
     if ignore and path and ".".join(path) in ignore:
         return obj  # current path is 'blacklisted': won't inspect it further/deeper
     if isinstance(obj, dict):
-        pruned = {}
-        for k, v in obj.items():
-            if k in on_keys and v in for_values:
-                return None  # current `obj` matches criteria!
-            else:
-                if v:
-                    path.append(k)
-                    pruned_v = prune_obj(
-                        obj=v,
-                        on_keys=on_keys,
-                        for_values=for_values,
-                        ignore=ignore,
-                        path=path,
-                    )
-                    if pruned_v:
-                        pruned[k] = pruned_v
-                    path.pop()
-                else:
-                    pruned[k] = v  # avoids losing empty but meaningful dicts or lists
+        pruned = _prune_dict(
+            dict_=obj,
+            on_keys=on_keys,
+            for_values=for_values,
+            ignore=ignore,
+            path=path,
+        )
     elif isinstance(obj, list):
-        pruned = []
-        for element in obj:
-            if element:
-                pruned_e = prune_obj(
-                    obj=element,
-                    on_keys=on_keys,
-                    for_values=for_values,
-                    ignore=ignore,
-                    path=path
-                )
-                if pruned_e:
-                    pruned.append(pruned_e)
-            else:
-                pruned.append(element)  # avoids losing empty but meaningful elements
+        pruned = _prune_list(
+            list_=obj,
+            on_keys=on_keys,
+            for_values=for_values,
+            ignore=ignore,
+            path=path
+        )
     else:
         return obj
 
