@@ -138,8 +138,41 @@ def clean_obj(
     clean_keys: Iterable[Any],
     ignore_paths: Optional[Iterable[str]] = None,
 ) -> Any:
-    """Remove obsolete elements from nested `obj`."""
+    """Remove obsolete items from nested `obj`.
 
+    To remove obsolete items from a nested object such as a nested dictionary or
+    list, you can specify all the keys that identify an item in your nested object
+    via `search_keys`, and all the keys in which these values may be used in your
+    object via `clean_keys`. This would remove all items anywhere in your nested
+    where any of the item's keys is in `clean_keys` *and* matches any of the values
+    found for any key in `search_keys` that exists *only once* in the object. In
+    other words, identifying values that are not referenced anywhere else in your
+    nested object are considered obsolete and thus are removed.
+
+    Parameters
+    ----------
+    obj
+        The nested target object.
+    search_keys
+        Keys anywhere in `obj` whose values are collected and counted. Values that
+        only occur once indicate an obsolete item when they are used as a value for
+        any key in `clean_keys`.
+    clean_keys
+        Keys anywhere in `obj` whose parent item (i.e., the item that contains this
+        key) is removed from `obj` when its value occurs only once for any of the
+        keys in `search_keys`.
+    ignore_paths
+        Paths (including their substructures) through `obj` that are excluded from
+        cleaning: no items in and below these paths will be removed from `obj`. A
+        path here must be described by the sequence of its keys, separated by a dot.
+        For instance, "config.foo.bar" would prevent `config[foo][bar][<...>]` from
+        being cleaned.
+
+    Returns
+    -------
+    Cleaned deep copy of `obj`.
+
+    """
     cleaned_obj = copy.deepcopy(obj)
 
     matches = get_values_for_keys(obj=obj, keys=search_keys)
