@@ -46,7 +46,7 @@ def get_substr_frequency(string: str, substrings: Iterable[str]) -> Dict[str, in
     return {s: string.count(s) for s in substrings}
 
 
-def get_summed_frequencies(freq: Dict[Any, int]):
+def summed_frequencies(freq: Dict[Any, int]):
     """Get total sum of frequencies in given frequency dict."""
     return sum(freq.values())
 
@@ -176,30 +176,25 @@ def clean_obj(
     cleaned_obj = copy.deepcopy(obj)
 
     matches = get_values_for_keys(obj=obj, keys=search_keys)
-    freq_before = get_substr_frequency(string=json.dumps(obj), substrings=matches)
 
-    summed_freq_before = get_summed_frequencies(freq_before)
-    summed_freq_after = summed_freq_before - 1
-
-    while summed_freq_before > summed_freq_after:
-        orphaned_values = [k for k, f in freq_before.items() if f == 1]
-        if orphaned_values:
+    while True:
+        freq_before = get_substr_frequency(
+            string=json.dumps(cleaned_obj),
+            substrings=matches,
+        )
+        if orphaned_values := [k for k, f in freq_before.items() if f == 1]:
             cleaned_obj = prune_obj(
                 obj=cleaned_obj,
                 on_keys=clean_keys,
                 for_values=orphaned_values,
                 ignore_paths=ignore_paths,
             )
-            freq_after = get_substr_frequency(
-                string=json.dumps(cleaned_obj),
-                substrings=matches,
-            )
-            summed_freq_before = get_summed_frequencies(freq_before)
-            summed_freq_after = get_summed_frequencies(freq_after)
-            freq_before = freq_after
-        else:
-            # no more cleaning possible now (breaks while loop)
-            summed_freq_after = summed_freq_before
+        freq_after = get_substr_frequency(
+            string=json.dumps(cleaned_obj),
+            substrings=matches,
+        )
+        if summed_frequencies(freq_after) == summed_frequencies(freq_before):
+            break
 
     return cleaned_obj
 
