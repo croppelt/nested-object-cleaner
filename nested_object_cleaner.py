@@ -51,7 +51,7 @@ def get_summed_frequencies(freq: Dict[Any, int]):
     return sum(freq.values())
 
 
-def _prune_dict(dict_, on_keys, for_values, ignore, path):
+def _prune_dict(dict_, on_keys, for_values, ignore_paths, path):
     """Type-specific helper for `prune_obj`."""
     pruned = {}
     for k, v in dict_.items():
@@ -65,7 +65,7 @@ def _prune_dict(dict_, on_keys, for_values, ignore, path):
                 obj=v,
                 on_keys=on_keys,
                 for_values=for_values,
-                ignore=ignore,
+                ignore_paths=ignore_paths,
                 path=path,
             )
             if pruned_v:
@@ -77,7 +77,7 @@ def _prune_dict(dict_, on_keys, for_values, ignore, path):
     return pruned
 
 
-def _prune_list(list_, on_keys, for_values, ignore, path):
+def _prune_list(list_, on_keys, for_values, ignore_paths, path):
     """Type-specific helper for `prune_obj`."""
     pruned = []
     for element in list_:
@@ -87,7 +87,7 @@ def _prune_list(list_, on_keys, for_values, ignore, path):
                 obj=element,
                 on_keys=on_keys,
                 for_values=for_values,
-                ignore=ignore,
+                ignore_paths=ignore_paths,
                 path=path
             )
             if pruned_e:
@@ -102,20 +102,20 @@ def prune_obj(
     obj: Any,
     on_keys: Iterable[Any],
     for_values: Iterable[Any],
-    ignore: Optional[Iterable[str]] = None,
+    ignore_paths: Optional[Iterable[str]] = None,
     path: Optional[List[Any]] = None,
 ) -> Any:
     """Remove elements from nested `obj` where given keys match specified values."""
     if not path:
         path = []
-    if ignore and path and ".".join(path) in ignore:
+    if ignore_paths and path and ".".join(path) in ignore_paths:
         return obj  # current path is 'blacklisted': won't inspect it further/deeper
     if isinstance(obj, dict):
         pruned = _prune_dict(
             dict_=obj,
             on_keys=on_keys,
             for_values=for_values,
-            ignore=ignore,
+            ignore_paths=ignore_paths,
             path=path,
         )
     elif isinstance(obj, list):
@@ -123,7 +123,7 @@ def prune_obj(
             list_=obj,
             on_keys=on_keys,
             for_values=for_values,
-            ignore=ignore,
+            ignore_paths=ignore_paths,
             path=path
         )
     else:
@@ -136,7 +136,7 @@ def clean_obj(
     obj: Any,
     search_keys: Iterable[Any],
     clean_keys: Iterable[Any],
-    ignore: Optional[Iterable[str]] = None,
+    ignore_paths: Optional[Iterable[str]] = None,
 ) -> Any:
     """Remove obsolete elements from nested `obj`."""
 
@@ -149,13 +149,13 @@ def clean_obj(
     summed_freq_after = summed_freq_before - 1
 
     while summed_freq_before > summed_freq_after:
-        prune_values = [k for k, f in freq_before.items() if f == 1]
-        if prune_values:
+        orphaned_values = [k for k, f in freq_before.items() if f == 1]
+        if orphaned_values:
             cleaned_obj = prune_obj(
                 obj=cleaned_obj,
                 on_keys=clean_keys,
-                for_values=prune_values,
-                ignore=ignore,
+                for_values=orphaned_values,
+                ignore_paths=ignore_paths,
             )
             freq_after = get_substr_frequency(
                 string=json.dumps(cleaned_obj),
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         obj=nested_obj,
         search_keys=[],
         clean_keys=[],
-        ignore=[],
+        ignore_paths=[],
     )
     write_dict_to_json(
         dict_=cleaned,
