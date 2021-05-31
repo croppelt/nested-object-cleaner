@@ -12,7 +12,7 @@ from typing import Any, Dict, Iterable, List, Optional, OrderedDict
 # Default settings used if not set otherwise via the Command Line Interface
 DEFAULT_SEARCH_KEYS: Iterable[str] = ("name", "fromDict", "sourceName")
 DEFAULT_TARGET_KEYS: Iterable[str] = ("name",)
-DEFAULT_IGNORED_PATHS: Iterable[str] = ("elements.config.options", "global.variables")
+DEFAULT_IGNORED_PATHS: Iterable[str] = ()
 
 
 def get_ordered_dict_from_file(fn: str) -> OrderedDict:
