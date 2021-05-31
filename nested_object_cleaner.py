@@ -222,7 +222,7 @@ if __name__ == "__main__":
         "-s",
         "--search-in",
         action="store",
-        type=list,
+        type=str,
         nargs="*",
         default=DEFAULT_SEARCH_KEYS,
         help="keys whose values are collected and counted",
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         "-t",
         "--target-keys",
         action="store",
-        type=list,
+        type=str,
         nargs="*",
         default=DEFAULT_TARGET_KEYS,
         help="keys that trigger removal of their parent when orphaned",
@@ -240,26 +240,23 @@ if __name__ == "__main__":
         "-i",
         "--ignore-paths",
         action="store",
-        type=list,
+        type=str,
         nargs="*",
         default=DEFAULT_IGNORED_PATHS,
         help="paths in which items will never be removed",
     )
     args = parser.parse_args()
 
-    target_dir: str = os.path.dirname(args.file) #"./data"
-    target_fn: str = os.path.basename(args.file) #"nested_sample_obj_01.json"
-
     nested_obj = get_ordered_dict_from_file(
-        fn=f"{target_dir}/{target_fn}",
+        fn=args.file,
     )
     cleaned = clean_obj(
         obj=nested_obj,
-        search_keys=args.search_in, #DEFAULT_SEARCH_KEYS,
-        clean_keys=args.target_keys, #DEFAULT_TARGET_KEYS,
-        ignore_paths=args.ignore_paths, #DEFAULT_IGNORED_PATHS,
+        search_keys=args.search_in,
+        clean_keys=args.target_keys,
+        ignore_paths=args.ignore_paths,
     )
     write_dict_to_json(
         dict_=cleaned,
-        fn=f"{target_dir}/cleaned_{target_fn}",
+        fn=f"{os.path.dirname(args.file)}/cleaned_{os.path.basename(args.file)}",
     )
