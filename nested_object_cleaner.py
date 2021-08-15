@@ -1,11 +1,18 @@
 """Removes no longer referenced items from a nested object."""
 
+import argparse
 import collections
 import copy
 import jsmin
 import json
 import os
 from typing import Any, Dict, Iterable, List, Optional, OrderedDict
+
+
+# Default settings used if not set otherwise via the Command Line Interface
+DEFAULT_SEARCH_KEYS: Iterable[str] = ("name", "fromDict", "sourceName")
+DEFAULT_TARGET_KEYS: Iterable[str] = ("name",)
+DEFAULT_IGNORED_PATHS: Iterable[str] = ()
 
 
 def get_ordered_dict_from_file(fn: str) -> OrderedDict:
@@ -200,17 +207,56 @@ def clean_obj(
 
 
 if __name__ == "__main__":
-    target_fn: str = "nested_obj_01.json"
+
+    parser = argparse.ArgumentParser(
+        description="Remove no longer referenced items from a nested object",
+        fromfile_prefix_chars='@',
+    )
+    parser.add_argument(
+        "file",
+        action="store",
+        type=str,
+        help="path to target file containing the nested object to be cleaned",
+    )
+    parser.add_argument(
+        "-s",
+        "--search-in",
+        action="store",
+        type=str,
+        nargs="*",
+        default=DEFAULT_SEARCH_KEYS,
+        help="keys whose values are collected and counted",
+    )
+    parser.add_argument(
+        "-t",
+        "--target-keys",
+        action="store",
+        type=str,
+        nargs="*",
+        default=DEFAULT_TARGET_KEYS,
+        help="keys that trigger removal of their parent when orphaned",
+    )
+    parser.add_argument(
+        "-i",
+        "--ignore-paths",
+        action="store",
+        type=str,
+        nargs="*",
+        default=DEFAULT_IGNORED_PATHS,
+        help="paths in which items will never be removed",
+    )
+    args = parser.parse_args()
+
     nested_obj = get_ordered_dict_from_file(
-        fn=target_fn,
+        fn=args.file,
     )
     cleaned = clean_obj(
         obj=nested_obj,
-        search_keys=[],
-        clean_keys=[],
-        ignore_paths=[],
+        search_keys=args.search_in,
+        clean_keys=args.target_keys,
+        ignore_paths=args.ignore_paths,
     )
     write_dict_to_json(
         dict_=cleaned,
-        fn=f"cleaned_{target_fn}",
+        fn=f"{os.path.dirname(args.file)}/cleaned_{os.path.basename(args.file)}",
     )
